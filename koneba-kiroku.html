@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e8ece7">
+<title>捏場生産記録</title>
+<link rel="manifest" href='data:application/json,{"name":"捏場生産記録","short_name":"捏場記録","start_url":".","display":"standalone","background_color":"%23e8ece7","theme_color":"%23e8ece7"}'>
+<style>
+:root{
+  --ink:#17242a;
+  --ink-2:#5a6b70;
+  --paper:#e8ece7;
+  --sheet:#fbfcfa;
+  --rule:#c3ccc6;
+  --rule-2:#e0e6e1;
+  --band:#dde5df;
+  --auto:#1d5b6e;
+  --seal:#b03a2e;
+  --warn:#8a5a12;
+  --lot:#f9ead2;
+  --r:3px;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  --sans:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-text-size-adjust:100%;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+/* ---------- header ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  background:var(--paper);
+  border-bottom:1px solid var(--rule);
+}
+.bar{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px 0;
+  max-width:760px;margin:0 auto;
+}
+.wordmark{
+  font-size:15px;font-weight:700;letter-spacing:.14em;
+  margin:0;flex:1;
+}
+.tabs{display:flex;gap:0;max-width:760px;margin:0 auto;padding:0 14px}
+.tab{
+  appearance:none;border:0;background:none;
+  font-family:inherit;font-size:14px;font-weight:600;
+  color:var(--ink-2);padding:10px 14px;cursor:pointer;
+  border-bottom:2px solid transparent;
+}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--seal)}
+.tab:focus-visible{outline:2px solid var(--auto);outline-offset:-2px}
+
+main{max-width:760px;margin:0 auto;padding:14px 14px 120px}
+
+/* ---------- sheet ---------- */
+.sheet{
+  background:var(--sheet);
+  border:1px solid var(--rule);
+  border-radius:var(--r);
+  box-shadow:0 1px 0 var(--rule-2),0 6px 18px rgba(23,36,42,.05);
+  overflow:hidden;
+}
+.sheet + .sheet{margin-top:14px}
+.sheet-title{
+  display:flex;align-items:baseline;gap:10px;
+  padding:9px 12px;
+  background:var(--band);
+  border-bottom:1px solid var(--rule);
+}
+.sheet-title h2{
+  margin:0;font-size:13px;font-weight:700;letter-spacing:.18em;
+}
+.sheet-title .hint{
+  margin-left:auto;font-size:11px;color:var(--ink-2);letter-spacing:.02em;
+}
+.pad{padding:10px 12px}
+
+/* ---------- rows ---------- */
+.row{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 12px;
+  border-bottom:1px solid var(--rule-2);
+}
+.row:last-child{border-bottom:0}
+.row label,.row .lab{
+  flex:0 0 92px;font-size:12.5px;color:var(--ink-2);letter-spacing:.04em;
+}
+.row .grow{flex:1}
+/* 入力欄は中身に合った幅で。日付カードは左端そろえ */
+#f_date{width:152px;flex:0 0 auto}
+#f_lot{width:112px;flex:0 0 auto}
+
+/* ---------- fields ---------- */
+input,select,textarea,button{font-family:inherit;font-size:16px;color:var(--ink)}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;
+  background:#fff;
+  border:1px solid var(--rule);
+  border-radius:var(--r);
+  padding:7px 8px;
+  min-height:38px;
+}
+input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;appearance:textfield;-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+textarea{min-height:74px;resize:vertical;line-height:1.6}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--auto);outline-offset:-1px;border-color:var(--auto)}
+/* ▾ は1枚のSVGで描く。三角を2枚のグラデーションで合成すると
+   継ぎ目が縦線になって見えるため（端末の解像度によって出る） */
+select{
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2010%207%27%3E%3Cpath%20d%3D%27M1.3%201.7L5%205.4L8.7%201.7%27%20fill%3D%27none%27%20stroke%3D%27%235a6b70%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E");
+  background-repeat:no-repeat;
+  background-position:right 9px center;
+  background-size:10px 7px;
+  padding-right:28px;
+}
+
+/* ---------- checkbox / switch ---------- */
+.cb{display:flex;align-items:center;gap:9px;cursor:pointer;min-height:38px;user-select:none}
+.cb input{flex:0 0 auto;width:21px;height:21px;margin:0;accent-color:var(--auto)}
+.cb .t{font-size:12.5px;color:var(--ink-2)}
+.sw{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+.sw input{position:absolute;opacity:0;width:0;height:0}
+.sw .track{
+  flex:0 0 auto;width:40px;height:24px;border-radius:999px;
+  background:#d7ded9;border:1px solid var(--rule);position:relative;
+  transition:background .15s,border-color .15s;
+}
+.sw .track::after{
+  content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;
+  border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(23,36,42,.28);
+  transition:transform .15s;
+}
+.sw input:checked + .track{background:var(--auto);border-color:var(--auto)}
+.sw input:checked + .track::after{transform:translateX(16px)}
+.sw input:focus-visible + .track{outline:2px solid var(--auto);outline-offset:2px}
+.sw .t{font-size:12px;color:var(--ink-2)}
+.sw input:checked ~ .t{color:var(--ink);font-weight:600}
+@media (prefers-reduced-motion:reduce){
+  .sw .track,.sw .track::after{transition:none}
+}
+
+/* ---------- grid table ---------- */
+table{width:100%;border-collapse:collapse}
+th,td{padding:0;text-align:right}
+thead th{
+  font-size:11px;font-weight:600;color:var(--ink-2);
+  letter-spacing:.06em;padding:6px 6px;
+  border-bottom:1px solid var(--rule);
+  white-space:nowrap;
+}
+thead th:first-child,tbody th{text-align:left}
+tbody th{
+  font-size:13px;font-weight:600;padding:0 6px;white-space:nowrap;
+  border-bottom:1px solid var(--rule-2);
+}
+tbody td{border-bottom:1px solid var(--rule-2);padding:3px 3px}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+td input,td select{min-height:36px;padding:5px 6px}
+
+/* 行見出し（Lot変更のチェック） */
+.rowhd{display:flex;align-items:center;gap:6px}
+.rowhd input{flex:0 0 auto;width:19px;height:19px;margin:0;accent-color:var(--seal);cursor:pointer}
+
+/* Lot変更の行 */
+.nocell{display:flex;align-items:center;gap:5px}
+.lotbadge{
+  display:none;flex:0 0 auto;white-space:nowrap;
+  font-family:var(--mono);font-size:11px;letter-spacing:.02em;
+  color:var(--seal);font-weight:700;
+}
+.lotbadge.on{display:block}
+tr.reset td{background:var(--lot)}
+tr.reset td:first-child{box-shadow:inset 3px 0 0 var(--seal)}
+.noval{flex:0 0 auto;text-align:right;font-family:var(--mono)}
+.nocell{justify-content:flex-end}
+#p_no0{width:80px;flex:0 0 auto}
+#powd td{text-align:right}
+#p_use0{width:96px;display:inline-block}
+tr.reset td input{border-color:#d9b48c}
+
+/* ---------- machine cards ---------- */
+.mrow{border-bottom:1px solid var(--rule-2)}
+.mrow:last-child{border-bottom:0}
+.mbody{padding:11px 12px 12px}
+.mhead{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.mhead b{font-size:15px;font-weight:700;letter-spacing:.1em}
+.mhead .cnt{margin-left:auto;font-size:12px;color:var(--ink-2);white-space:nowrap}
+.mhead .rst{margin-left:auto;padding:4px 10px;font-size:12px;white-space:nowrap}
+.mhead .rst ~ .cnt{margin-left:0}
+.mhead .cnt.big{font-size:13px}
+/* 号機ごとの現Lot使用量（Lot変更のときだけ出す） */
+.lotuse{display:inline-flex;align-items:center;gap:7px}
+.lotuse .lotnm{
+  font-family:var(--mono);font-size:12px;font-weight:700;
+  color:var(--seal);letter-spacing:.04em;white-space:nowrap;
+}
+.lotbox{border:1px solid var(--rule);border-radius:var(--r);padding:1px 10px;background:var(--sheet)}
+.lotbox .lrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--rule-2)}
+.lotbox .lrow:last-child{border-bottom:0}
+.lotbox .lab{flex:0 0 92px;font-size:12.5px;color:var(--ink-2)}
+.cv{display:inline-block;width:10px;height:7px;vertical-align:middle;
+  background:url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2010%207%27%3E%3Cpath%20d%3D%27M1.3%201.7L5%205.4L8.7%201.7%27%20fill%3D%27none%27%20stroke%3D%27%235a6b70%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E") no-repeat center;background-size:10px 7px}
+.editbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 10px;
+  border:1px solid var(--seal);border-radius:var(--r);background:var(--sheet)}
+.editbar .et{font-size:13px;font-weight:700;color:var(--seal)}
+.editbar .et b{font-family:var(--mono)}
+.save:disabled{opacity:.4;filter:grayscale(1)}
+input.lotkg{width:82px;min-height:32px;padding:4px 7px;font-size:14px}
+.calc.lotval{flex:1;text-align:left;padding:0 0 0 9px}
+.calc.gap{color:var(--seal)}
+/* 入力欄とドロップダウンを1つの欄に重ねる（見た目は欄1つ＋▾） */
+.combo{position:relative;display:block}
+.combo input{
+  width:100%;padding-right:31px;
+  font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;
+}
+.combo::after{
+  content:"";position:absolute;right:9px;top:50%;
+  width:5px;height:5px;margin-top:-4px;pointer-events:none;
+  border:solid var(--ink-2);border-width:0 1.5px 1.5px 0;
+  transform:rotate(45deg);
+}
+/* ▾のところだけがドロップダウン。それ以外を押すと手入力（キーボード）になる */
+.pick{
+  position:absolute;right:1px;top:1px;bottom:1px;width:24px;
+  min-height:0;padding:0;border:0;background:none;opacity:0;
+}
+.combo::before{
+  content:"";position:absolute;right:25px;top:6px;bottom:6px;
+  width:1px;background:var(--rule);pointer-events:none;
+}
+.pick option{color:var(--ink)}
+.combo:focus-within{border-radius:var(--r);box-shadow:0 0 0 2px var(--auto)}
+
+/* 小さい欄（昼稼働・止め時刻・前日残） */
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:7px 10px;margin-bottom:9px}
+.sl{font-size:11.5px;color:var(--ink-2);letter-spacing:.04em}
+.mini{width:auto;min-height:34px;padding:5px 7px}
+select.mini{padding-right:26px;background-position:right 8px center;background-size:9px 6px}
+.combo.mini{width:90px;min-height:0;padding:0}
+.combo.mini input{min-height:34px;padding:5px 7px;padding-right:31px}
+input.mini{width:86px}
+.adjwrap{display:inline-flex;align-items:center;gap:6px}
+.cb.tight{min-height:34px;gap:7px}
+.cb.tight input{width:19px;height:19px}
+.nospin{-moz-appearance:textfield;appearance:textfield}
+.nospin::-webkit-outer-spin-button,
+.nospin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.eq{
+  margin:7px 0 0;font-size:11.5px;color:var(--ink-2);
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+}
+.eq:empty{display:none}
+
+/* 水量・回数（水量変更ありのときは行が増える。位置は変わらない） */
+.wgrid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:5px 7px;align-items:center}
+.wgrid .wdel{display:flex;align-items:center;justify-content:center}
+.xbtn{
+  appearance:none;width:27px;height:27px;padding:0;line-height:1;
+  border:1px solid var(--rule);border-radius:var(--r);background:var(--sheet);
+  color:var(--ink-2);font-size:12px;cursor:pointer;
+}
+.xbtn:hover{color:var(--seal);border-color:#e0c4bf}
+.xbtn:active{transform:translateY(1px)}
+.xbtn:focus-visible{outline:2px solid var(--auto);outline-offset:1px}
+.addseg{font-size:12px;padding:6px 11px;white-space:nowrap}
+.wgrid .sh{font-size:10.5px;color:var(--ink-2);letter-spacing:.04em;line-height:1.2}
+.wgrid .wcell{min-width:0}
+.wgrid .combo input{min-height:36px;padding:5px 6px;padding-right:31px}
+.wq{font-weight:600}
+.wlegend{display:flex;gap:3px;flex-wrap:wrap;padding:6px 12px;border-bottom:1px solid var(--rule-2)}
+.wlegend b{
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  padding:2px 6px;border-radius:2px;border:1px solid;
+}
+
+/* ---------- computed values ---------- */
+.calc{
+  font-family:var(--mono);font-variant-numeric:tabular-nums;
+  color:var(--auto);font-weight:600;
+  text-align:right;padding:0 7px;white-space:nowrap;
+}
+.calc.big{font-size:19px}
+.calc.zero{color:var(--ink-2);font-weight:500}
+.unit{font-size:11px;color:var(--ink-2);font-weight:400;margin-left:3px}
+
+/* resource strip */
+.res{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule-2)}
+.res div{background:var(--sheet);padding:9px 8px;text-align:right}
+.res span{display:block;font-size:11px;color:var(--ink-2);letter-spacing:.08em;text-align:left}
+.res b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:18px;font-weight:600;color:var(--auto)}
+
+/* ---------- save ---------- */
+.savebar{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:linear-gradient(to top,var(--paper) 70%,rgba(232,236,231,0));
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+}
+.savebar .inner{max-width:760px;margin:0 auto}
+.save{
+  display:flex;align-items:center;gap:12px;width:100%;
+  background:var(--sheet);color:var(--ink);
+  border:1px solid var(--seal);border-radius:var(--r);
+  padding:9px 14px 9px 9px;cursor:pointer;
+  box-shadow:0 3px 12px rgba(23,36,42,.12);
+}
+.save:active{transform:translateY(1px)}
+.save:focus-visible{outline:2px solid var(--auto);outline-offset:2px}
+.hanko{
+  flex:0 0 auto;width:42px;height:42px;border-radius:50%;
+  border:2px solid var(--seal);color:var(--seal);
+  display:grid;place-items:center;
+  font-size:13px;font-weight:700;letter-spacing:.06em;line-height:1.1;
+}
+.save .txt{text-align:left;flex:1}
+.save .txt b{display:block;font-size:15px;font-weight:700}
+.save .txt small{display:block;font-size:11.5px;color:var(--ink-2);font-family:var(--mono)}
+
+/* ---------- stamp overlay ---------- */
+.stamp{
+  position:fixed;inset:0;z-index:60;display:grid;place-items:center;
+  background:rgba(232,236,231,.72);pointer-events:none;opacity:0;
+}
+.stamp.on{animation:stampIn 1.15s ease forwards}
+.stamp b{
+  color:var(--seal);border:4px double var(--seal);border-radius:50%;
+  width:150px;height:150px;display:grid;place-items:center;
+  font-size:26px;font-weight:700;letter-spacing:.12em;
+  transform:rotate(-11deg);
+}
+@keyframes stampIn{
+  0%{opacity:0}
+  14%{opacity:1}
+  78%{opacity:1}
+  100%{opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .stamp.on{animation:none;opacity:1;transition:opacity .3s}
+}
+
+/* ---------- log ---------- */
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.years{display:flex;flex-wrap:wrap;gap:6px}
+.years:not(:empty){margin-bottom:10px}
+.chip{
+  appearance:none;background:var(--sheet);border:1px solid var(--rule);
+  border-radius:999px;padding:6px 14px;cursor:pointer;
+  font-family:var(--mono);font-size:13px;color:var(--ink-2);
+}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--sheet);font-weight:700}
+.chip:focus-visible{outline:2px solid var(--auto);outline-offset:1px}
+.ygroup{
+  display:flex;align-items:center;gap:10px;
+  margin:18px 0 8px;padding-bottom:5px;
+  font-size:12px;font-weight:700;letter-spacing:.2em;color:var(--ink-2);
+  border-bottom:1px solid var(--rule);
+}
+.ygroup .ydel{margin-left:auto;padding:3px 9px;font-size:11px;letter-spacing:0;font-weight:400}
+.entry .del1{margin-left:8px}
+.ygroup:first-child{margin-top:0}
+/* 月の折りたたみ */
+.mbar{
+  appearance:none;width:100%;display:flex;align-items:center;gap:9px;
+  margin:0 0 8px;padding:9px 12px;cursor:pointer;text-align:left;
+  background:var(--band);border:1px solid var(--rule);border-radius:var(--r);
+  font-family:inherit;font-size:13px;color:var(--ink);
+}
+.mbar:hover{background:#eaf0e8}
+.mbar:focus-visible{outline:2px solid var(--auto);outline-offset:1px}
+.mbar .mcaret{
+  flex:0 0 auto;font-size:10px;color:var(--ink-2);
+  transition:transform .12s ease-out;transform:rotate(-90deg);
+}
+.mbar.open .mcaret{transform:none}
+.mbar .mname{font-weight:700;font-family:var(--mono);font-size:14px}
+.mbar .mcnt{margin-left:auto;font-size:12px;color:var(--ink-2);font-family:var(--mono)}
+.mlist{margin-bottom:14px}
+@media (prefers-reduced-motion:reduce){ .mbar .mcaret{transition:none} }
+.btn{
+  appearance:none;background:var(--sheet);border:1px solid var(--rule);
+  border-radius:var(--r);padding:8px 12px;font-size:13px;cursor:pointer;
+}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--auto);outline-offset:1px}
+.btn.danger{color:var(--seal);border-color:#e0c4bf}
+.entry{margin-bottom:10px}
+.entry summary{
+  list-style:none;cursor:pointer;
+  display:flex;align-items:baseline;gap:10px;
+  padding:11px 12px;background:var(--sheet);
+  border:1px solid var(--rule);border-radius:var(--r);
+}
+.entry summary::-webkit-details-marker{display:none}
+.entry[open] summary{border-radius:var(--r) var(--r) 0 0;border-bottom-color:var(--rule-2)}
+.entry .d{font-family:var(--mono);font-weight:700;font-size:15px;flex:0 0 auto}
+.entry .m{font-size:12px;color:var(--ink-2);margin-left:auto;font-family:var(--mono)}
+.entry .body{
+  background:var(--sheet);border:1px solid var(--rule);border-top:0;
+  border-radius:0 0 var(--r) var(--r);padding:2px 0;
+}
+.entry .lotmark{
+  flex:0 0 auto;font-size:10.5px;font-family:var(--mono);font-weight:700;
+  color:var(--seal);border:1px solid #e0c4bf;border-radius:2px;padding:1px 5px;
+}
+.kv{display:flex;padding:6px 12px;border-bottom:1px solid var(--rule-2);font-size:13.5px;gap:10px}
+.kv:last-child{border-bottom:0}
+.kv span{flex:0 0 108px;color:var(--ink-2);font-size:12px}
+.kv b{font-weight:600;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.kv .free{font-family:var(--sans);font-weight:400;white-space:pre-wrap}
+.empty{padding:34px 14px;text-align:center;color:var(--ink-2);font-size:13.5px;line-height:1.9}
+
+/* ---------- カーソル ---------- */
+button,select,label,summary{cursor:pointer}
+input[type=text],input[type=number],textarea{cursor:text}
+input[type=date],input[type=checkbox]{cursor:pointer}
+
+/* ---------- 画面内ダイアログ（confirm/alertの代わり） ---------- */
+/* 見た目はブラウザ標準（Chrome）の確認ダイアログに合わせている。
+   ただし位置だけは標準（画面上部）ではなく画面中央。
+   中身は自前のまま＝PWAやプレビューでも確実に出る */
+.modal{
+  position:fixed;inset:0;z-index:70;
+  display:grid;place-items:center;
+  padding:20px;
+  background:rgba(0,0,0,.10);
+}
+.modal .box{
+  width:100%;max-width:576px;
+  background:#fff;border:0;border-radius:8px;
+  box-shadow:0 4px 8px 3px rgba(0,0,0,.15),0 1px 3px rgba(0,0,0,.30);
+  padding:16px 24px 20px;
+  font-family:system-ui,"Segoe UI","Yu Gothic UI",Meiryo,
+    "Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif;
+}
+.modal .ctitle{
+  margin:0 0 14px;font-size:16px;font-weight:600;
+  color:#202124;letter-spacing:0;line-height:1.4;
+}
+.modal .mrow{display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:14px}
+.modal .mrow input{width:86px;text-align:right;font-family:var(--mono)}
+.modal .mrow span:first-child{flex:0 0 76px}
+.modal .mrow input.lotin{width:100px;text-align:left;color:var(--seal);font-weight:700}
+.modal .msg{
+  margin:0;padding:0;font-size:13px;line-height:1.75;
+  color:#202124;white-space:pre-wrap;
+}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end;padding:22px 0 0}
+.modal .acts .btn{
+  min-width:0;text-align:center;
+  border:1px solid transparent;border-radius:999px;
+  padding:8px 24px;font-size:13px;font-weight:500;line-height:1.4;
+  font-family:inherit;
+}
+.modal .acts .btn:active{transform:none}
+.modal .acts .yes{background:#1a73e8;border-color:#1a73e8;color:#fff}
+.modal .acts .yes:hover{background:#1966c8;border-color:#1966c8}
+.modal .acts .yes:focus{outline:2px solid #1a73e8;outline-offset:2px}
+.modal .acts .no{background:#e8f0fe;color:#1a73e8}
+.modal .acts .no:hover{background:#d7e6fd}
+.modal .acts .no:focus-visible{outline:2px solid #1a73e8;outline-offset:2px}
+
+.note{font-size:12px;color:var(--warn);padding:8px 12px;background:#fdf6e7;border-bottom:1px solid var(--rule-2)}
+.tip{font-size:11.5px;color:var(--ink-2);line-height:1.6;padding:7px 12px;border-bottom:1px solid var(--rule-2)}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar"><h1 class="wordmark">捏 場 生 産 記 録</h1></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tabIn" role="tab" aria-selected="true" aria-controls="viewIn">入力</button>
+    <button class="tab" id="tabLog" role="tab" aria-selected="false" aria-controls="viewLog">記録</button>
+  </div>
+</header>
+
+<main>
+<div id="warn" class="hidden"></div>
+
+<!-- ================= 入力 ================= -->
+<section id="viewIn" role="tabpanel">
+
+  <div class="editbar hidden" id="editBar">
+    <span class="et">編集中：<b id="editDate">—</b></span>
+    <span class="grow"></span>
+    <button type="button" class="btn" id="btnEditSave">上書き保存</button>
+    <button type="button" class="btn danger" id="btnEditCancel">取消</button>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-title"><h2>日 付</h2><span class="hint" id="youbi"></span></div>
+    <div class="row"><label for="f_date">日付</label><input type="date" id="f_date"></div>
+    <div class="row"><label for="f_lot">調合粉Lot</label>
+      <input type="text" id="f_lot" autocapitalize="characters">
+      <label class="cb tight"><input type="checkbox" id="f_lotChange" aria-label="Lot変更"><span class="t">変更</span></label>
+    </div>
+    <div class="row hidden" id="rowLotNew"><span class="lab">変更後のLot</span>
+      <span class="calc big lotval" id="v_lotNew">—</span>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-title"><h2>捏 機</h2><span class="hint">水量ごとに色が変わります</span></div>
+    <div class="tip">右端の <span class="cv" aria-hidden="true"></span> を押すと候補から選べます。止め時刻・水量・回数の欄は直接入力もできます。</div>
+    <div class="wlegend" id="wlegend"></div>
+    <div id="mach"></div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-title"><h2>調 合 粉</h2><span class="hint">1タンク 1800kg</span></div>
+    <div class="pad">
+      <table>
+        <thead><tr><th style="width:45%">No.</th><th style="width:55%">使用量（kg）</th></tr></thead>
+        <tbody id="powd"></tbody>
+      </table>
+    </div>
+    <div class="row"><span class="lab">調合粉残</span><span class="grow"></span>
+      <span class="calc big" id="v_zan">—</span><span class="unit">kg</span></div>
+    <div class="pad lotchk hidden">
+      <div class="lotbox">
+        <div class="lrow"><span class="lab" id="l_oldSumLab">合計</span><span class="grow"></span>
+          <span class="calc big" id="v_oldSum">0</span><span class="unit">kg</span></div>
+        <div class="lrow"><span class="lab">帳面残量</span><span class="grow"></span>
+          <span class="calc big" id="v_book">—</span><span class="unit">kg</span></div>
+        <div class="lrow"><span class="lab">差</span><span class="grow"></span>
+          <span class="calc big" id="v_diff">0</span><span class="unit">kg</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-title"><h2>液</h2><span class="hint">前日残 − 使用 ＋ 調合</span></div>
+    <div class="mrow">
+      <div class="mbody">
+        <div class="mhead"><b>KID液</b><span class="cnt big">当日残 <span class="calc big" id="v_kidTou">0</span> kg</span></div>
+        <div class="strip">
+          <label class="sl" for="f_kidZen">前日残（kg）</label>
+          <input type="number" id="f_kidZen" class="nospin mini" inputmode="numeric" step="1">
+          <label class="cb tight"><input type="checkbox" id="f_kidCho" aria-label="KID液を調合した"><span class="t">調合 ＋3,000kg</span></label>
+          <label class="cb tight"><input type="checkbox" id="f_kidAdjOn" aria-label="KID液を調整する"><span class="t">調整</span></label>
+          <span class="adjwrap hidden" id="kidAdjWrap">
+            <input type="number" id="f_kidAdj" class="nospin mini" step="1" aria-label="KID液の調整量（kg。減らすときは頭に −）">
+            <span class="sl">kg</span>
+          </span>
+        </div>
+        <p class="eq" id="v_kidEq"></p>
+      </div>
+    </div>
+    <div class="mrow">
+      <div class="mbody">
+        <div class="mhead"><b>D液</b><span class="cnt big">当日残 <span class="calc big" id="v_dTou">0</span> kg</span></div>
+        <div class="strip">
+          <label class="sl" for="f_dZen">前日残（kg）</label>
+          <input type="number" id="f_dZen" class="nospin mini" inputmode="numeric" step="1">
+          <label class="cb tight"><input type="checkbox" id="f_dCho" aria-label="D液を調合した"><span class="t">調合 ＋3,000kg</span></label>
+          <label class="cb tight"><input type="checkbox" id="f_dAdjOn" aria-label="D液を調整する"><span class="t">調整</span></label>
+          <span class="adjwrap hidden" id="dAdjWrap">
+            <input type="number" id="f_dAdj" class="nospin mini" step="1" aria-label="D液の調整量（kg。減らすときは頭に −）">
+            <span class="sl">kg</span>
+          </span>
+        </div>
+        <p class="eq" id="v_dEq"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-title"><h2>資 源</h2><span class="hint">総使用量 (kg)</span></div>
+    <div class="res">
+      <div><span>KID液</span><b id="v_kid">0</b></div>
+      <div><span>D液</span><b id="v_d">0</b></div>
+      <div><span>MP</span><b id="v_mp">0</b></div>
+      <div><span>水</span><b id="v_mizu">0</b></div>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-title"><h2>備 考</h2></div>
+    <div class="pad"><textarea id="f_memo"></textarea></div>
+  </div>
+
+</section>
+
+<!-- ================= 記録 ================= -->
+<section id="viewLog" role="tabpanel" class="hidden">
+  <div class="years" id="years"></div>
+  <div class="tools">
+    <button class="btn" id="btnXlsx">Excelで書き出す</button>
+    <button class="btn" id="btnXlsxIn">Excelから読み込む</button>
+    <button class="btn" id="btnBackup">バックアップ</button>
+    <button class="btn" id="btnRestore">復元</button>
+    <button class="btn danger" id="btnUndo">直前の1件を取消</button>
+  </div>
+  <div id="list"></div>
+</section>
+</main>
+
+<div class="savebar" id="savebar">
+  <div class="inner">
+    <button class="save" id="btnSave">
+      <span class="hanko">保存</span>
+      <span class="txt"><b>記録して翌日へ</b><small id="saveSub">—</small></span>
+    </button>
+  </div>
+</div>
+
+<div class="stamp" id="stamp"><b>記録済</b></div>
+<div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalMsg">
+  <div class="box">
+    <h3 class="ctitle" id="modalTitle">このページの内容</h3>
+    <p class="msg" id="modalMsg"></p>
+    <div class="mrow hidden" id="modalRow">
+      <span id="modalPre"></span>
+      <input type="text" id="modalIn" inputmode="numeric" autocapitalize="off">
+      <span id="modalPost"></span>
+    </div>
+    <div class="mrow hidden" id="modalRow2">
+      <span id="modalPre2"></span>
+      <input type="text" id="modalIn2" class="lotin" autocapitalize="characters">
+    </div>
+    <div class="acts">
+      <button class="btn yes" id="modalYes">OK</button>
+      <button class="btn no" id="modalNo">キャンセル</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="fileIn" accept="application/json" class="hidden">
+<input type="file" id="xlsxIn" accept=".xlsx" class="hidden">
+
+<script>
+"use strict";
+
+/* ================= storage ================= */
+const store = (() => {
+  let ok = true;
+  try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); }
+  catch(e){ ok = false; }
+  const mem = {};
+  return {
+    ok,
+    get(k){ try{ return ok ? localStorage.getItem(k) : (k in mem ? mem[k] : null); }catch(e){ return k in mem ? mem[k] : null; } },
+    set(k,v){ try{ if(ok) localStorage.setItem(k,v); else mem[k]=v; }catch(e){ mem[k]=v; } }
+  };
+})();
+const K_CUR = "neriba.current", K_LOG = "neriba.records";
+
+/* ================= 画面内ダイアログ ================= */
+/* PWAやプレビューの中では confirm()/alert() が無視されることがあるので自前で出す */
+let modalRes = null, modalHasIn = false, modalHasIn2 = false;
+function closeModal(v){
+  document.getElementById("modal").classList.add("hidden");
+  const r = modalRes; modalRes = null;
+  const hadIn = modalHasIn, hadIn2 = modalHasIn2;
+  modalHasIn = modalHasIn2 = false;
+  if(!r) return;
+  if(!hadIn){ r(v); return; }
+  if(!v){ r(null); return; }
+  const a = document.getElementById("modalIn").value.trim();
+  r(hadIn2 ? {a, b: document.getElementById("modalIn2").value.trim()} : a);
+}
+function openModal(o){
+  return new Promise(res=>{
+    if(modalRes) closeModal(false);
+    const M   = document.getElementById("modal");
+    const msg = document.getElementById("modalMsg");
+    const row = document.getElementById("modalRow");
+    modalHasIn  = o.pre  !== undefined;
+    modalHasIn2 = o.pre2 !== undefined;
+    msg.textContent = o.msg || "";
+    msg.classList.toggle("hidden", modalHasIn);
+    row.classList.toggle("hidden", !modalHasIn);
+    document.getElementById("modalRow2").classList.toggle("hidden", !modalHasIn2);
+    if(modalHasIn){
+      document.getElementById("modalPre").textContent  = o.pre;
+      document.getElementById("modalPost").textContent = o.post || "";
+      document.getElementById("modalIn").value = "";
+    }
+    if(modalHasIn2){
+      document.getElementById("modalPre2").textContent = o.pre2;
+      document.getElementById("modalIn2").value = o.val2 || "";
+    }
+    document.getElementById("modalYes").textContent = o.yes || "OK";
+    const nb = document.getElementById("modalNo");
+    nb.textContent = o.no || "キャンセル";
+    nb.classList.toggle("hidden", o.no === null);
+    M.classList.remove("hidden");
+    modalRes = res;
+    document.getElementById(modalHasIn ? "modalIn" : "modalYes").focus();
+  });
+}
+function ask(msg, yes, no){ return openModal({msg, yes, no}); }
+function tell(msg){ return ask(msg, "OK", null); }
+/* 入力欄つき。OKなら打った文字、キャンセルなら null を返す */
+function askIn(pre, post, yes){ return openModal({pre, post, yes}); }
+/* 2段の入力つき。OKなら {a, b}、キャンセルなら null を返す */
+function askIn2(pre, post, pre2, val2, yes){ return openModal({pre, post, pre2, val2, yes}); }
+document.addEventListener("click", e=>{
+  if(e.target.id === "modalYes") closeModal(true);
+  else if(e.target.id === "modalNo") closeModal(false);
+  else if(e.target.id === "modal") closeModal(false);
+});
+document.addEventListener("keydown", e=>{
+  if(!modalRes) return;
+  if(e.key === "Escape") closeModal(false);
+  if(e.key === "Enter")  closeModal(true);
+});
+
+/* 何かで落ちたときに黙って壊れないよう画面に出す */
+function showWarn(text){
+  const w = document.getElementById("warn");
+  w.className = "sheet";
+  w.innerHTML = '<div class="note"></div>';
+  w.firstChild.textContent = text;
+}
+window.addEventListener("error", e=> showWarn("エラー: "+(e.message||"不明")+"（この文言を伝えてもらえると直せます）"));
+window.addEventListener("unhandledrejection", e=> showWarn("エラー: "+((e.reason&&e.reason.message)||e.reason||"不明")));
+
+/* ================= constants ================= */
+const MACHINES = ["１号","２号","３号","４号"];
+const MIZU_OPTS = [90,92,94,96,98,100,102];
+const STOP_OPTS = ["16:10","16:20"];
+const KAISU_OPTS = [12,13,14,15,16];
+const HIRU_OPTS = ["なし","あり"];
+const BAG = 1800;
+const CHOGO_KG = 3000;          // 1回調合したときの液の量
+const ROWS = 6;                 // 調合粉の行数（Excel E8:E13 / F8:F13）
+/* 水量・回数の入力行数。1行目は必ずあり、「水量変更」ボタンで増やす（上限なし） */
+const segN = MACHINES.map(()=> 1);
+
+/* ================= helpers ================= */
+const $ = s => document.querySelector(s);
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const fmt = n => (Math.round(n*100)/100).toLocaleString("ja-JP");
+const pad3 = n => (n===""||n===null||n===undefined||!isFinite(n)) ? "" : String(n).padStart(3,"0");
+const YOUBI = ["日","月","火","水","木","金","土"];
+function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function parseYmd(s){ if(!s) return null; const p=s.split("-").map(Number); const d=new Date(p[0],p[1]-1,p[2]); return isNaN(d)?null:d; }
+function label(s){ const d=parseYmd(s); return d ? (d.getMonth()+1)+"/"+d.getDate()+"("+YOUBI[d.getDay()]+")" : "—"; }
+function labelY(s){ const d=parseYmd(s); return d ? d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()+"("+YOUBI[d.getDay()]+")" : "—"; }
+function yearOf(s){ return (s||"").slice(0,4); }
+let yearFilter = "all";
+let openMonths = null;          // 開いている月（"YYYY-MM"）。最初は一番新しい月だけ開く
+
+/* CW33 → CW34（末尾の数字だけ1つ上げる。桁数は維持：CW09 → CW10） */
+function nextLotAuto(){ return nextLot($("#f_lot").value); }
+/* 変更後のLotは手入力。空なら自動（CW33→CW34）の値を使う */
+let lotNewStr = "";                       // ダイアログで決めた変更後のLot
+function lotNewVal(){ return lotNewStr || nextLotAuto(); }
+function nextLot(lot){
+  const m = String(lot||"").trim().match(/^(.*?)(\d+)(\D*)$/);
+  if(!m) return "";
+  const w = m[2].length;
+  return m[1] + String(Number(m[2])+1).padStart(w,"0") + m[3];
+}
+
+/* 水量ごとの色（90 = 薄い水色 → 102 = 濃い青。手入力の値もその間の色になる） */
+function waterHsl(n){
+  const t = Math.max(0, Math.min(1, (n-90)/12));
+  return {h:190 + t*24, l:92 - t*34};
+}
+function waterCss(n){
+  const {h,l} = waterHsl(n);
+  return {bg:`hsl(${h.toFixed(0)} 66% ${l.toFixed(1)}%)`, bd:`hsl(${h.toFixed(0)} 56% ${Math.max(l-20,30).toFixed(1)}%)`};
+}
+
+/* ================= build form ================= */
+const opts = arr => `<option value=""></option>` + arr.map(v=>`<option>${v}</option>`).join("");
+
+/* 手入力＋ドロップダウンの欄 */
+const combo = (id,arr,lab,cls) => `
+  <div class="combo">
+    <input type="number" id="${id}" class="nospin ${cls||""}" inputmode="numeric" step="1" min="0" aria-label="${lab}">
+    <select class="pick" data-for="${id}" aria-label="${lab}を選ぶ">${opts(arr)}</select>
+  </div>`;
+/* 水量・回数の1行分（4つ目のセルは削除ボタン。1行目は消せないので空） */
+function segRow(i,k){
+  const nm = MACHINES[i];
+  return `
+    <div class="wcell" data-seg="${i}_${k}">${combo(`g_mizu${i}_${k}`, MIZU_OPTS, nm+"の水量"+(k+1), "wq")}</div>
+    <div class="wcell" data-seg="${i}_${k}">${combo(`g_am${i}_${k}`, KAISU_OPTS, nm+"の午前の回数"+(k+1))}</div>
+    <div class="wcell" data-seg="${i}_${k}">${combo(`g_pm${i}_${k}`, KAISU_OPTS, nm+"の午後の回数"+(k+1))}</div>
+    <div class="wcell wdel" data-seg="${i}_${k}">${k===0 ? "" :
+      `<button type="button" class="xbtn" data-del="${i}_${k}" aria-label="${nm}の${k+1}行目を削除">✕</button>`}</div>`;
+}
+/* 見出しは1枚目のカードだけに出す（同じ並びなので毎回は出さない） */
+
+$("#wlegend").innerHTML = MIZU_OPTS.map(v=>{
+  const c = waterCss(v);
+  return `<b style="background:${c.bg};border-color:${c.bd}">${v}</b>`;
+}).join("");
+
+$("#mach").innerHTML = MACHINES.map((name,i)=>`
+  <div class="mrow">
+    <div class="mbody">
+      <div class="mhead">
+        <b>${name}</b>
+        <span class="lotuse hidden" id="mlu${i}">
+          <span class="lotnm" id="mln${i}"></span>
+          <input type="number" id="m_old${i}" class="nospin lotkg" inputmode="numeric" step="1" min="0" aria-label="${name}機の使用量（kg）">
+          <span class="sl">kg</span>
+        </span>
+        <button type="button" class="btn danger rst" data-rst="${i}">リセット</button>
+        <span class="cnt big">合計 <span class="calc big" id="m_sum${i}">0</span> 回</span>
+      </div>
+      <div class="strip">
+        <label class="sl" for="m_hiru${i}">昼稼働</label>
+        <select id="m_hiru${i}" class="mini">${opts(HIRU_OPTS)}</select>
+        <label class="sl" for="m_stop${i}">止め</label>
+        <div class="combo mini">
+          <input type="text" id="m_stop${i}" aria-label="止め時刻">
+          <select class="pick" data-for="m_stop${i}" aria-label="止め時刻を選ぶ">${opts(STOP_OPTS)}</select>
+        </div>
+        <button type="button" class="btn addseg" id="m_add${i}">水量変更</button>
+      </div>
+      <div class="wgrid" id="wg${i}">
+        <span class="sh">水量（kg）</span><span class="sh">午前（回）</span><span class="sh">午後（回）</span><span class="sh"></span>
+        ${segRow(i,0)}
+      </div>
+      <p class="eq" id="m_eq${i}"></p>
+    </div>
+  </div>`).join("");
+
+$("#powd").innerHTML = Array.from({length:ROWS},(_,i)=>`
+  <tr id="p_row${i}">
+    <td><div class="nocell"><span class="lotbadge" id="p_lot${i}"></span>
+      ${ i===0
+        ? `<input type="text" id="p_no0" inputmode="numeric" style="text-align:right;font-family:var(--mono)">`
+        : `<span class="calc noval" id="p_no${i}"></span>` }</div></td>
+    <td>${ i===0
+        ? `<input type="number" id="p_use0" inputmode="numeric" step="1" min="0">`
+        : `<span class="calc" id="p_use${i}">0</span>` }</td>
+  </tr>`).join("");
+
+/* ================= 備考の自動行 ================= */
+function memoLine(tag, on, text){
+  const ta = $("#f_memo");
+  let lines = ta.value.split("\n");
+  const idx = lines.findIndex(l => l.trim().startsWith(tag));
+  if(on){
+    if(idx >= 0){ if(lines[idx] === text) return; lines[idx] = text; }
+    else if(lines.length === 1 && lines[0].trim() === "") lines = [text];
+    else lines.push(text);
+  }else{
+    if(idx < 0) return;
+    lines.splice(idx, 1);
+    if(!lines.length) lines = [""];
+  }
+  ta.value = lines.join("\n");
+}
+function syncCho(id, tag){
+  memoLine(tag, $("#"+id).checked, tag+"（＋"+CHOGO_KG.toLocaleString("ja-JP")+"kg）");
+}
+function syncLotMemo(){
+  memoLine("調合粉Lot変更", $("#f_lotChange").checked,
+    "調合粉Lot変更 "+($("#f_lot").value.trim()||"—")+" → "+(lotNewVal()||"—"));
+}
+
+/* ================= 調合粉No. ================= */
+/* No.は1行目だけ入力欄。2行目以降は表示なので読み書きを分ける */
+function noGet(i){ const el = $("#p_no"+i); if(!el) return ""; return (i===0 ? el.value : el.textContent).trim(); }
+function noSet(i,v){ const el = $("#p_no"+i); if(!el) return; if(i===0) el.value = v; else el.textContent = v; }
+function nosArr(){ return Array.from({length:ROWS},(_,i)=>noGet(i)); }
+let lotRowVal = -1;                                   // Lotが変わる行（No.001になる行）
+function ckRow(){ return lotRowVal; }
+/* 打たれたNo.が表の何行目か。前ゼロは無視して照合 */
+function findNoRow(v){
+  const t = String(v==null?"":v).trim().replace(/^0+/,"");
+  if(!/^\d+$/.test(t)) return -1;
+  for(let i=0;i<ROWS;i++){
+    const n = noGet(i).replace(/^0+/,"");
+    if(n !== "" && n === t) return i;
+  }
+  return -1;
+}
+
+/* 指定行のNo.から下を連番で埋める（桁数はそのまま引継ぐ：008 → 009 → 010） */
+function fillNos(from){
+  const base = noGet(from);
+  if(!/^\d+$/.test(base)) return;
+  const w = base.length;
+  let n = Number(base);
+  for(let i=from+1;i<ROWS;i++){ n++; noSet(i, String(n).padStart(w,"0")); }
+}
+/* チェックした行をNo.001にして、その下を連番にする */
+function applyLotRow(){
+  const i = ckRow();
+  if(i < 0 || i >= ROWS) return;
+  noSet(i, "001");
+  fillNos(i);
+}
+
+/* Lot変更チェック。オンにしたら「調合粉No.〇〇〇で終了」を聞く */
+async function onLotChange(){
+  if($("#f_lotChange").checked){
+    const v = await askIn2("調合粉No.", "で終了", "変更後のLot", nextLotAuto(), "OK");
+    const i = v ? findNoRow(v.a) : -1;
+    if(i < 0){
+      if(v !== null) await tell("その番号は調合粉の表にありません。");
+      clearLotChange();
+    }else{
+      lotRowVal = i + 1;                         // 打った番号までが旧Lot。次の行がNo.001
+      lotNewStr = v.b || nextLotAuto();          // 年度替わりなどはダイアログで打ち直す
+      applyLotRow();
+    }
+  }else{
+    clearLotChange();
+  }
+  syncLotMemo();
+  syncVis();
+  refresh();
+}
+function clearLotChange(){
+  $("#f_lotChange").checked = false;
+  lotNewStr = "";
+  lotRowVal = -1;
+  fillNos(0);                                    // 旧Lotの連番に戻す
+  for(let i=0;i<MACHINES.length;i++) $("#m_old"+i).value = "";
+}
+
+/* ================= 表示の出し入れ ================= */
+function syncVis(){
+  ["kid","d"].forEach(k=> $("#"+k+"AdjWrap").classList.toggle("hidden", !$("#f_"+k+"AdjOn").checked));
+  const on = $("#f_lotChange").checked;
+  $("#rowLotNew").classList.toggle("hidden", !on);
+  document.querySelectorAll(".lotchk").forEach(e=> e.classList.toggle("hidden", !on));
+  for(let i=0;i<MACHINES.length;i++) $("#mlu"+i).classList.toggle("hidden", !on);
+}
+/* ---- 水量・回数の行を増やす／減らす ---- */
+function addSeg(i){
+  $("#wg"+i).insertAdjacentHTML("beforeend", segRow(i, segN[i]));
+  segN[i]++;
+}
+function popSeg(i){                              // 末尾の行のDOMを外す
+  const k = segN[i]-1;
+  if(k <= 0) return;
+  document.querySelectorAll(`#wg${i} [data-seg="${i}_${k}"]`).forEach(e=> e.remove());
+  segN[i] = k;
+}
+function setSegN(i,n){
+  n = Math.max(1, n);
+  while(segN[i] < n) addSeg(i);
+  while(segN[i] > n) popSeg(i);
+}
+function delSeg(i,k){                            // k行目を消す＝下の行を1つずつ繰り上げて末尾を外す
+  for(let j=k; j<segN[i]-1; j++){
+    $("#g_mizu"+i+"_"+j).value = $("#g_mizu"+i+"_"+(j+1)).value;
+    $("#g_am"+i+"_"+j).value   = $("#g_am"+i+"_"+(j+1)).value;
+    $("#g_pm"+i+"_"+j).value   = $("#g_pm"+i+"_"+(j+1)).value;
+  }
+  popSeg(i);
+}
+async function onAddSeg(i){
+  if(!(await ask(`${MACHINES[i]}機に水量の行を追加します。`, "追加する"))) return;
+  addSeg(i);
+  refresh();
+}
+async function onDelSeg(i,k){
+  const has = $("#g_mizu"+i+"_"+k).value || $("#g_am"+i+"_"+k).value || $("#g_pm"+i+"_"+k).value;
+  const msg = `${MACHINES[i]}機の${k+1}行目を削除します。`
+            + (has ? "\n入力した水量と回数は消えます。" : "");
+  if(!(await ask(msg, "削除する"))) return;
+  delSeg(i,k);
+  refresh();
+}
+
+async function onReset(i){
+  const nm = MACHINES[i];
+  if(!(await ask(`${nm}機の入力を全部消します。\n水量・回数・昼稼働・止め時刻が空になります。`, "消す"))) return;
+  setSegN(i, 1);                                   // 増やした水量の行は1行に戻す
+  $("#g_mizu"+i+"_0").value = "";
+  $("#g_am"+i+"_0").value   = "";
+  $("#g_pm"+i+"_0").value   = "";
+  $("#m_hiru"+i).value = "";
+  $("#m_stop"+i).value = "";
+  $("#m_old"+i).value  = "";
+  refresh();
+}
+
+/* ================= read / write form ================= */
+function readForm(){
+  const machines = MACHINES.map((_,i)=>{
+    const split = segN[i] > 1;
+    const segs = Array.from({length:segN[i]},(_,k)=>({
+      mizu: $("#g_mizu"+i+"_"+k).value === "" ? "" : num($("#g_mizu"+i+"_"+k).value),
+      am:   $("#g_am"+i+"_"+k).value   === "" ? "" : num($("#g_am"+i+"_"+k).value),
+      pm:   $("#g_pm"+i+"_"+k).value   === "" ? "" : num($("#g_pm"+i+"_"+k).value)
+    }));
+    const act = segs;
+    const am = act.reduce((a,g)=> a+num(g.am), 0) || "";
+    const pm = act.reduce((a,g)=> a+num(g.pm), 0) || "";
+    return {
+      mizu: num(segs[0].mizu),
+      split, segs, am, pm,
+      hiru: $("#m_hiru"+i).value,
+      stop: $("#m_stop"+i).value.trim(),
+      oldUse: $("#m_old"+i).value === "" ? "" : num($("#m_old"+i).value)   // 現Lotの使用量(kg)
+    };
+  });
+  return {
+    date:      $("#f_date").value,
+    lot:       $("#f_lot").value,
+    lotChange: $("#f_lotChange").checked,
+    lotNew:    lotNewVal(),
+    lotRow:    ckRow(),
+    machines,
+    no:     nosArr(),
+    use0:   $("#p_use0").value === "" ? "" : num($("#p_use0").value),
+    avail0: bagLeft,
+    use0man: use0Man,
+    kidZen: $("#f_kidZen").value === "" ? "" : num($("#f_kidZen").value),
+    kidCho: $("#f_kidCho").checked ? CHOGO_KG : "",
+    kidAdj: $("#f_kidAdjOn").checked && $("#f_kidAdj").value !== "" ? num($("#f_kidAdj").value) : "",
+    dZen:   $("#f_dZen").value === "" ? "" : num($("#f_dZen").value),
+    dCho:   $("#f_dCho").checked ? CHOGO_KG : "",
+    dAdj:   $("#f_dAdjOn").checked && $("#f_dAdj").value !== "" ? num($("#f_dAdj").value) : "",
+    memo:   $("#f_memo").value
+  };
+}
+function writeForm(s){
+  $("#f_date").value = s.date || "";
+  $("#f_lot").value  = s.lot  || "";
+  lotNewStr = s.lotChange ? (s.lotNew || "") : "";
+  $("#f_lotChange").checked = !!s.lotChange;
+  lotRowVal = s.lotRow ?? -1;
+  (s.machines||[]).forEach((m,i)=>{
+    if(i>=MACHINES.length) return;
+    const rows = (m.segs && m.segs.length) ? m.segs : [{mizu:m.mizu, am:m.am, pm:m.pm}];
+    let n = 1;                                   // 変更なし＝1行。変更あり＝実際に使った行数
+    if(m.split) for(let k=0;k<rows.length;k++){
+      const g = rows[k] || {};
+      if(num(g.mizu) > 0 || num(g.am) > 0 || num(g.pm) > 0) n = k+1;
+    }
+    setSegN(i, n);
+    for(let k=0;k<n;k++){
+      const g = rows[k] || {};
+      let mz = g.mizu ?? "";
+      if(k === 0 && mz === "") mz = m.mizu || (m.segs ? "" : 94);   // 古い記録だけ94で補う
+      $("#g_mizu"+i+"_"+k).value = mz;
+      $("#g_am"+i+"_"+k).value   = g.am ?? "";
+      $("#g_pm"+i+"_"+k).value   = g.pm ?? "";
+    }
+    $("#m_hiru"+i).value = m.hiru || "";
+    $("#m_stop"+i).value = m.stop || "";
+    $("#m_old"+i).value  = m.oldUse ?? "";
+  });
+  for(let i=0;i<ROWS;i++) noSet(i, (s.no||[])[i] || "");
+  $("#p_use0").value  = s.use0 === "" || s.use0 === undefined ? "" : s.use0;
+  bagLeft = s.avail0 === undefined ? num(s.use0) : num(s.avail0);   // 古い記録は使用量を袋の量とみなす
+  use0Man = s.avail0 === undefined ? false : !!s.use0man;
+  $("#f_kidZen").value= s.kidZen ?? "";
+  $("#f_kidCho").checked = num(s.kidCho) > 0;
+  $("#f_kidAdjOn").checked = s.kidAdj !== "" && s.kidAdj !== undefined && s.kidAdj !== null;
+  $("#f_kidAdj").value = $("#f_kidAdjOn").checked ? s.kidAdj : "";
+  $("#f_dZen").value  = s.dZen ?? "";
+  $("#f_dCho").checked   = num(s.dCho) > 0;
+  $("#f_dAdjOn").checked = s.dAdj !== "" && s.dAdj !== undefined && s.dAdj !== null;
+  $("#f_dAdj").value = $("#f_dAdjOn").checked ? s.dAdj : "";
+  $("#f_memo").value  = s.memo || "";
+  syncVis();
+}
+
+/* ================= calculation (Excelの数式と同じ) ================= */
+/* 1行目まわりの状態
+   bagLeft = いま開いている袋に入っている量（画面には出さない。引継ぎで自動セット）
+   use0Man = 1行目を手で打ったか。打ったらその値は回数を変えても書き換えない */
+let bagLeft = 0, use0Man = false;
+function mpOf(s){ return (s.machines||[]).reduce((a,m)=> a + num(m.am) + num(m.pm), 0) * 100; }
+
+/* 実際に使う行だけ返す（水量変更なしは1行目だけ。古い記録は mizu/am/pm から） */
+function machRows(m){
+  const raw = (m.segs && m.segs.length)
+    ? (m.split ? m.segs : m.segs.slice(0,1))
+    : [{mizu:m.mizu, am:m.am, pm:m.pm}];
+  return raw.filter(g => num(g.mizu) > 0 && (num(g.am)+num(g.pm)) > 0);
+}
+function machWater(m){
+  return machRows(m).reduce((a,g)=> a + (num(g.am)+num(g.pm)) * (num(g.mizu)-20), 0);
+}
+function machDetail(m){
+  if(!m.split) return "";
+  return machRows(m).map(g=> `${num(g.mizu)}kg×${num(g.am)+num(g.pm)}回`).join(" ＋ ");
+}
+function calc(s){
+  // 捏ね回数
+  const per = s.machines.map(m => num(m.am) + num(m.pm));
+  const total = per.reduce((a,b)=>a+b,0);
+
+  const kid  = total * 10;                                   // F3
+  const dEki = total * 10;                                   // F4
+  const mp   = total * 100;                                  // F5
+  const mizu = s.machines.reduce((a,m)=> a + machWater(m), 0);// F6
+
+  // 調合粉振分 F8:F13
+  //   1行目は「その袋から使った量」。その日の総使用量(MP)より多ければMPで頭打ちにする
+  const avail0 = Math.max(num(s.avail0 ?? s.use0), num(s.use0));   // 袋に入っていた量
+  const use = [Math.min(num(s.use0), mp)];
+  for(let i=1;i<ROWS;i++){
+    const used = use.reduce((a,b)=>a+b,0);
+    use.push(Math.max(Math.min(mp - used, BAG), 0));          // =MAX(MIN(MP-累計,1800),0)
+  }
+
+  // 調合粉残 F14
+  let zan = null;                                            // null = Excelの ""
+  if(use.slice(1).some(v=>v>0)){
+    let last = 0;
+    for(let i=0;i<ROWS;i++) if(use[i]>0) last = use[i];
+    zan = BAG - last;
+  }else if(use[0] > 0){
+    zan = avail0 - use[0];        // 1行目の袋だけで足りた日。0なら使い切り
+  }
+
+  // 液 G15 / G16
+  const kidTou = num(s.kidZen) - kid  + num(s.kidCho) + num(s.kidAdj);
+  const dTou   = num(s.dZen)   - dEki + num(s.dCho)   + num(s.dAdj);
+
+  // Lot変更時の棚卸し
+  //   帳面残量 = Lot変更行（No.001になる行）より上の行の使用量の合計＝旧Lot分
+  //   差       = 号機ごとの現Lot使用量の合計 − 帳面残量
+  const lr     = s.lotRow ?? -1;
+  const book   = (s.lotChange && lr > 0) ? use.slice(0, lr).reduce((a,b)=>a+b,0) : 0;
+  const oldSum = s.lotChange ? s.machines.reduce((a,m)=> a + num(m.oldUse), 0) : 0;
+  const diff   = oldSum - book;
+
+  return {per,total,kid,dEki,mp,mizu,use,zan,kidTou,dTou,oldSum,book,diff};
+}
+
+/* ================= render ================= */
+function setCalc(el,v,unitZero){
+  el.textContent = fmt(v);
+  el.classList.toggle("zero", v===0 && unitZero!==false);
+}
+function eqText(zen, use, cho, adj, tou){
+  return `前日残 ${fmt(zen)} − 使用 ${fmt(use)}` +
+         (cho ? ` ＋ 調合 ${fmt(cho)}` : "") +
+         (adj ? ` ${adj < 0 ? "−" : "＋"} 調整 ${fmt(Math.abs(adj))}` : "") +
+         ` ＝ ${fmt(tou)} kg`;
+}
+function paintWater(){
+  document.querySelectorAll(".wq").forEach(el=>{
+    const n = num(el.value);
+    if(!n){ el.style.background=""; el.style.borderColor=""; return; }
+    const c = waterCss(n);
+    el.style.background = c.bg;
+    el.style.borderColor = c.bd;
+  });
+}
+/* チェックした行だけ、変更後のLotを赤で出す */
+function paintLot(){
+  const on = $("#f_lotChange").checked;
+  const newLot = lotNewVal();
+  const r = ckRow();
+  for(let i=0;i<ROWS;i++){
+    const show = on && i === r;
+    $("#p_row"+i).classList.toggle("reset", show);
+    const bd = $("#p_lot"+i);
+    bd.className = "lotbadge" + (show ? " on" : "");
+    bd.textContent = show ? (newLot || "Lot変更") : "";
+  }
+}
+
+/* Lot変更時の使用量欄（号機の見出し・合計・差） */
+function paintLotUse(c){
+  const lot = $("#f_lot").value.trim();
+  $("#v_lotNew").textContent = lotNewVal() || "—";
+  for(let i=0;i<MACHINES.length;i++) $("#mln"+i).textContent = lot || "現Lot";
+  $("#l_oldSumLab").textContent = (lot ? lot+" 合計" : "合計");
+  setCalc($("#v_oldSum"), c.oldSum);
+  const bk = $("#v_book");
+  bk.textContent = c.book ? fmt(c.book) : "—";
+  bk.classList.toggle("zero", !c.book);
+  const d = c.diff, el = $("#v_diff");
+  el.textContent = (d>0 ? "＋" : d<0 ? "−" : "") + fmt(Math.abs(d));
+  el.classList.toggle("zero", d===0);
+  el.classList.toggle("gap",  d!==0);
+}
+
+function refresh(){
+  const s = readForm();
+  if(!use0Man && document.activeElement !== $("#p_use0")){   // 手で打っていなければ捏ね回数と連動させる
+    const v = Math.min(bagLeft, mpOf(s));
+    if(s.use0 === "" || num(s.use0) !== v){ $("#p_use0").value = v; s.use0 = v; }
+  }
+  const c = calc(s);
+
+  c.per.forEach((v,i)=> setCalc($("#m_sum"+i), v));
+  s.machines.forEach((m,i)=>{
+    const w = machWater(m);
+    const d = machDetail(m);
+    $("#m_eq"+i).textContent =
+      m.split ? (d ? `${d} → 水 ${fmt(w)} kg` : "水量と回数を入れてください")
+              : (c.per[i] ? (num(m.mizu) > 0
+                    ? `水 (${num(m.mizu)}−20) × ${c.per[i]}回 = ${fmt(w)} kg`
+                    : "水量を入れてください") : "");
+  });
+
+  setCalc($("#v_kid"),  c.kid);
+  setCalc($("#v_d"),    c.dEki);
+  setCalc($("#v_mp"),   c.mp);
+  setCalc($("#v_mizu"), c.mizu);
+
+  for(let i=1;i<ROWS;i++) setCalc($("#p_use"+i), c.use[i]);
+
+  const z = $("#v_zan");
+  z.textContent = c.zan === null ? "—" : fmt(c.zan);
+  z.classList.toggle("zero", c.zan === null);
+
+  setCalc($("#v_kidTou"), c.kidTou);
+  setCalc($("#v_dTou"),   c.dTou);
+  $("#v_kidEq").textContent = eqText(num(s.kidZen), c.kid,  num(s.kidCho), num(s.kidAdj), c.kidTou);
+  $("#v_dEq").textContent   = eqText(num(s.dZen),   c.dEki, num(s.dCho),   num(s.dAdj),   c.dTou);
+
+  paintWater();
+  paintLot();
+  paintLotUse(c);
+
+  $("#youbi").textContent = s.date ? label(s.date) : "日付が未入力です";
+  $("#saveSub").textContent = s.date
+    ? label(s.date) + " → " + label(ymd(new Date(parseYmd(s.date).getTime()+86400000)))
+    : "日付を入れてください";
+
+  store.set(K_CUR, JSON.stringify(s));
+}
+
+/* ================= records ================= */
+function getLog(){ try{ return JSON.parse(store.get(K_LOG) || "[]"); }catch(e){ return []; } }
+function setLog(a){ store.set(K_LOG, JSON.stringify(a)); }
+
+/* ================= 引継ぎの計算 ================= */
+/* 翌日の先頭に来る調合粉No.。
+   いま使っている袋（使用量が入っている最後の行）のNo.。使い切っていれば次のNo.。 */
+function carryNo(s, c){
+  let lastNo = "", li = -1;
+  (c.use || []).forEach((v,i)=>{ if(num(v) > 0) li = i; });
+  lastNo = String((li >= 0 ? s.no[li] : s.no[0]) || "").trim();
+  if(lastNo === "") (s.no || []).forEach(v=>{ if(v!=="") lastNo = v; });
+  if(lastNo !== "" && /^\d+$/.test(lastNo) && c.zan === 0)
+    lastNo = String(Number(lastNo)+1).padStart(lastNo.length,"0");
+  return lastNo;
+}
+/* 翌日の袋に入っている量。
+   残0＝袋を使い切った → 翌日は新しい袋なので満量(1800)。残があればその残り。 */
+function carryUse0(p, pc){
+  if(pc.zan === null) return Math.max(num(p.avail0 ?? p.use0), num(p.use0));  // 袋を開けていない日
+  return pc.zan === 0 ? BAG : pc.zan;
+}
+/* 先頭のNo.から下を連番に。Lot変更行があればそこから001に振り直す（画面のfillNosと同じ規則） */
+function renumberNos(no, lotRow){
+  const out = (no || []).slice();
+  const base = String(out[0] || "").trim();
+  if(/^\d+$/.test(base)){
+    const w = base.length; let n = Number(base);
+    for(let i=1;i<ROWS;i++){ n++; out[i] = String(n).padStart(w,"0"); }
+  }
+  const lr = lotRow ?? -1;
+  if(lr > 0){
+    out[lr] = "001"; let n = 1;
+    for(let i=lr+1;i<ROWS;i++){ n++; out[i] = String(n).padStart(3,"0"); }
+  }
+  for(let i=0;i<ROWS;i++) if(out[i] === undefined) out[i] = "";
+  return out;
+}
+/* 前の日(p,pc)の結果を、次の日(n)の前日残・調合粉残・No.・Lotに写す */
+function applyCarry(p, pc, n){
+  if(!p || !n) return;
+  n.kidZen = pc.kidTou;
+  n.dZen   = pc.dTou;
+  n.avail0 = carryUse0(p, pc);
+  if(n.use0man !== true) n.use0 = Math.min(n.avail0, mpOf(n));
+  n.lot    = p.lotChange ? (p.lotNew || nextLot(p.lot) || p.lot) : p.lot;
+  n.no     = ((n.lotRow ?? -1) === 0)
+               ? renumberNos(n.no, n.lotRow)
+               : renumberNos([carryNo(p, pc)], n.lotRow);
+}
+/* fromの記録から後ろへ、引継ぎ値を数珠つなぎに計算し直す */
+function recarry(log, from){
+  for(let i=Math.max(0, from); i<log.length-1; i++){
+    const cur = log[i], nx = log[i+1];
+    cur.calc = calc(cur.input);
+    applyCarry(cur.input, cur.calc, nx.input);
+    nx.calc = calc(nx.input);
+  }
+  const last = log[log.length-1];
+  if(last) last.calc = calc(last.input);
+  return last;
+}
+
+/* ================= 記録の再編集 ================= */
+let editIdx = null, editStash = null;
+const K_EDT = K_CUR + ".editstash";
+
+function setEditBar(on, dateStr){
+  $("#editBar").classList.toggle("hidden", !on);
+  $("#editDate").textContent = on ? labelY(dateStr) : "—";
+  $("#btnSave").disabled = on;
+}
+function startEdit(i){
+  const r = getLog()[i];
+  if(!r) return;
+  if(editIdx === null){
+    editStash = readForm();
+    store.set(K_EDT, JSON.stringify(editStash));
+  }
+  editIdx = i;
+  writeForm(r.input);
+  syncVis(); refresh();
+  setEditBar(true, r.input.date);
+  tab("in");
+}
+function endEdit(){
+  if(editStash) writeForm(editStash);
+  editStash = null; editIdx = null;
+  store.set(K_EDT, "");
+  setEditBar(false);
+  syncVis(); refresh();
+}
+async function saveEdit(){
+  if(editIdx === null) return;
+  const s = readForm();
+  if(!s.date){ await tell("日付を入れてください。"); $("#f_date").focus(); return; }
+  const log = getLog();
+  if(!log[editIdx]){ await tell("この記録が見つかりませんでした。"); endEdit(); renderLog(); return; }
+  if(!(await ask(label(s.date) + " 分の記録を書き換えます。\nこの日より後ろの記録の前日残・調合粉残・No.・Lotも計算し直します。", "上書きする"))) return;
+  const rec = {saved:new Date().toISOString(), input:s, calc:calc(s)};
+  log[editIdx] = rec;
+  log.sort((a,b)=> (a.input.date||"").localeCompare(b.input.date||""));
+  const last = recarry(log, log.indexOf(rec));
+  // 入力中のシート（記録していない当日分）にも引継ぎ値を反映する
+  if(last && editStash) applyCarry(last.input, last.calc, editStash);
+  setLog(log);
+  if(openMonths) openMonths.add((s.date||"").slice(0,7));
+  endEdit();
+  renderLog();
+  tab("log");
+}
+async function cancelEdit(){
+  if(editIdx === null) return;
+  if(!(await ask("編集をやめます。書き換えた内容は記録に反映されません。", "編集をやめる"))) return;
+  endEdit();
+}
+
+async function save(){
+  if(editIdx !== null){ await tell("記録を編集中です。〔上書き保存〕か〔取消〕を押してください。"); return; }
+  const s = readForm();
+  if(!s.date){ await tell("日付を入れてください。"); $("#f_date").focus(); return; }
+  const c = calc(s);
+
+  const warn = c.total === 0 ? "捏ね回数が全て空です。\n" : "";
+  if(!(await ask(warn + label(s.date) + " 分を記録して翌日へ進みます。\n入力欄はクリアされます。", "記録する"))) return;
+
+  // 記録（計算結果も一緒に固定して保存）
+  const log = getLog();
+  log.push({saved:new Date().toISOString(), input:s, calc:c});
+  log.sort((a,b)=> (a.input.date||"").localeCompare(b.input.date||""));
+  setLog(log);
+  if(openMonths) openMonths.add((s.date||"").slice(0,7));   // 記録した月は開いておく
+
+  // ---- 翌日へ引継ぎ ----
+  const nextBag = carryUse0(s, c);
+
+  const nextNo = carryNo(s, c);
+
+  const next = {
+    date:      ymd(new Date(parseYmd(s.date).getTime() + 86400000)),  // 翌日
+    lot:       s.lotChange ? (s.lotNew || nextLot(s.lot) || s.lot) : s.lot,
+    lotChange: false,
+    lotNew:    "",
+    lotRow:    -1,
+    machines: s.machines.map(m => {
+      // 水量変更した機械は、最後に使った水量を翌日の水量として引継ぐ
+      const last = machRows(m).pop();
+      const mizu = last ? num(last.mizu) : num(m.mizu);
+      return {mizu, split:false, segs:[{mizu, am:"", pm:""}], am:"", pm:"", hiru:"", stop:m.stop, oldUse:""};
+    }),
+    no:     [nextNo, "", "", "", "", ""],
+    use0:   0,                                                     // 捏ね回数を入れると連動して入る
+    avail0: nextBag,                                               // 残り、使い切っていれば新しい袋の1800
+    use0man: false,
+    kidZen: c.kidTou,                                              // 当日残 → 前日残
+    kidCho: "",
+    kidAdj: "",
+    dZen:   c.dTou,
+    dCho:   "",
+    dAdj:   "",
+    memo:   ""
+  };
+  writeForm(next);
+  fillNos(0);
+  refresh();
+  renderLog();
+  if(getLog().length !== log.length) showWarn("記録が保存できていません（ブラウザの保存領域が使えない状態です）。バックアップを取ってから、ファイルを直接開くか GitHub Pages 上で使ってください。");
+
+  const st = $("#stamp");
+  st.classList.remove("on"); void st.offsetWidth; st.classList.add("on");
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function entryHtml(r){
+  const s = r.input, c = r.calc;
+  const mach = s.machines.map((m,i)=>{
+    if(num(c.per[i]) === 0) return `${MACHINES[i]} —`;   // 捏ね回数0の号機
+    const w = m.split ? machDetail(m) : ("水"+num(m.mizu)+"kg");
+    return `${MACHINES[i]} ${w} / 午前${m.am===""?"—":m.am+"回"} 午後${m.pm===""?"—":m.pm+"回"} = ${c.per[i]}回`
+      + (m.hiru ? ` / 昼稼働${m.hiru}` : "")
+      + (m.stop ? ` / ${m.stop} 止め` : "");
+  }).join("\n");
+  const newLot = s.lotChange ? (s.lotNew || nextLot(s.lot)) : "";
+  const lr = s.lotRow ?? -1;
+  const dv = num(c.diff);
+  const bk = num(c.book ?? s.book);
+  const oldUse = s.machines.map((m,i)=>
+      `${MACHINES[i]} ${(m.oldUse===""||m.oldUse===undefined||m.oldUse===null) ? "—" : fmt(num(m.oldUse))+"kg"}`).join("\n")
+    + `\n合計 ${fmt(num(c.oldSum))}kg`
+    + ` / 帳面残量 ${bk ? fmt(bk)+"kg" : "—"}`
+    + ` / 差 ${dv>0?"＋":dv<0?"−":""}${fmt(Math.abs(dv))}kg`;
+  const powd = s.no.map((n,i)=> num(c.use[i])===0 ? null :
+      `No.${pad3(n)||"—"} … ${fmt(c.use[i])}kg`
+      + (s.lotChange && i === lr ? `（${newLot||"Lot変更"}）` : ""))
+    .filter(Boolean).join("\n");
+  return `<details class="entry">
+    <summary><span class="d">${labelY(s.date)}</span>
+      ${s.lotChange ? '<span class="lotmark">Lot変更</span>' : ''}
+      <span>${c.total} 回</span>
+      <span class="m">MP ${fmt(c.mp)}kg</span></summary>
+    <div class="body">
+      <div class="kv"><span>調合粉Lot</span><b>${esc(s.lot)||"—"}${newLot?" → "+esc(newLot):""}</b></div>
+      <div class="kv"><span>捏機</span><b class="free">${esc(mach)}</b></div>
+      <div class="kv"><span>捏ね回数 計</span><b>${c.total} 回</b></div>
+      <div class="kv"><span>KID液 / D液</span><b>${fmt(c.kid)} / ${fmt(c.dEki)} kg</b></div>
+      <div class="kv"><span>MP / 水</span><b>${fmt(c.mp)} / ${fmt(c.mizu)} kg</b></div>
+      <div class="kv"><span>調合粉</span><b class="free">${esc(powd)||"—"}</b></div>
+      <div class="kv"><span>調合粉残</span><b>${c.zan===null?"—":fmt(c.zan)+" kg"}</b></div>
+      ${s.lotChange ? `<div class="kv"><span>${esc(s.lot)||"現Lot"} 使用量</span><b class="free">${esc(oldUse)}</b></div>` : ""}
+      <div class="kv"><span>KID液 残</span><b>${esc(eqText(num(s.kidZen), c.kid,  num(s.kidCho), num(s.kidAdj), c.kidTou))}</b></div>
+      <div class="kv"><span>D液 残</span><b>${esc(eqText(num(s.dZen),   c.dEki, num(s.dCho),   num(s.dAdj),   c.dTou))}</b></div>
+      ${s.memo?`<div class="kv"><span>備考</span><b class="free">${esc(s.memo)}</b></div>`:""}
+      <div class="kv"><span>編集</span><b class="free"><button type="button" class="btn" data-edit="${r._i}">この日を編集</button><button type="button" class="btn danger del1" data-del1="${r._i}">この日を消す</button></b></div>
+    </div></details>`;
+}
+
+function renderLog(){
+  const log = getLog();
+  log.forEach((r,i)=> r._i = i);          // 編集ボタン用の並び順
+
+  /* 年の絞り込みボタン（2年以上あるときだけ出す） */
+  const years = [...new Set(log.map(r=>yearOf(r.input.date)).filter(Boolean))].sort().reverse();
+  if(yearFilter !== "all" && years.indexOf(yearFilter) < 0) yearFilter = "all";
+  $("#years").innerHTML = years.length < 2 ? "" :
+    [`<button class="chip" data-y="all" aria-pressed="${yearFilter==="all"}">すべて</button>`]
+      .concat(years.map(y=>`<button class="chip" data-y="${y}" aria-pressed="${yearFilter===y}">${y}年</button>`))
+      .join("");
+
+  const shown = log.filter(r => yearFilter==="all" || yearOf(r.input.date)===yearFilter);
+  $("#btnXlsx").textContent =
+    (yearFilter==="all" ? "すべて" : yearFilter+"年") + "をExcelで書き出す";
+
+  if(!log.length){
+    $("#list").innerHTML = '<div class="empty">まだ記録がありません。<br>入力タブで1日分を入れて「記録して翌日へ」を押すと、ここに溜まっていきます。</div>';
+    return;
+  }
+  if(!shown.length){
+    $("#list").innerHTML = '<div class="empty">'+yearFilter+'年の記録はありません。</div>';
+    return;
+  }
+
+  /* 新しい順に並べ、年で見出し・月で折りたたむ */
+  const groups = [];
+  shown.slice().reverse().forEach(r=>{
+    const key = (r.input.date || "").slice(0,7);        // YYYY-MM
+    const last = groups[groups.length-1];
+    if(last && last.key === key) last.items.push(r);
+    else groups.push({key, y:key.slice(0,4), m:Number(key.slice(5,7)), items:[r]});
+  });
+  if(openMonths === null) openMonths = new Set(groups.length ? [groups[0].key] : []);
+
+  let html = "", cur = "";
+  groups.forEach(g=>{
+    if(g.y !== cur){
+      html += `<h3 class="ygroup"><span>${g.y}年</span>`
+            + `<button type="button" class="btn danger ydel" data-ydel="${g.y}">この年を消す</button></h3>`;
+      cur = g.y;
+    }
+    const open = openMonths.has(g.key);
+    html += `<button type="button" class="mbar${open?" open":""}" data-m="${g.key}" aria-expanded="${open}">`
+          + `<span class="mcaret" aria-hidden="true">▼</span>`
+          + `<span class="mname">${g.m}月</span>`
+          + `</button>`
+          + `<div class="mlist${open?"":" hidden"}">${g.items.map(entryHtml).join("")}</div>`;
+  });
+  $("#list").innerHTML = html;
+}
+function esc(s){ return String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+
+/* ================= export / import ================= */
+function downloadBlob(name, blob){
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = u; a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(u), 1000);
+}
+function download(name, text, type){
+  downloadBlob(name, new Blob([text], {type:type+";charset=utf-8"}));
+}
+/* ================= Excel(.xlsx) 書き出し / 読み込み ================= */
+/* 見た目は1行1日の表。いちばん右に、読み込み用の「データ」列を隠して入れている */
+function xesc(s){
+  return String(s).replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]))
+                  .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+}
+function xunesc(s){
+  return String(s).replace(/&lt;/g,"<").replace(/&gt;/g,">")
+                  .replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&");
+}
+function colName(n){ let s=""; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=(n-m-1)/26; } return s; }
+
+const CRCT = (()=>{ const t = new Uint32Array(256);
+  for(let i=0;i<256;i++){ let c=i; for(let k=0;k<8;k++) c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1); t[i]=c>>>0; }
+  return t; })();
+function crc32(u8){
+  let c = 0xFFFFFFFF;
+  for(let i=0;i<u8.length;i++) c = CRCT[(c ^ u8[i]) & 255] ^ (c>>>8);
+  return (c ^ 0xFFFFFFFF)>>>0;
+}
+/* 無圧縮(store)のZIPを組む。xlsxはこの形でもExcelがそのまま開ける */
+function zipStore(files){
+  const enc = new TextEncoder(), parts = [], central = [];
+  let off = 0;
+  files.forEach(f=>{
+    const name = enc.encode(f.name);
+    const data = typeof f.data === "string" ? enc.encode(f.data) : f.data;
+    const crc  = crc32(data);
+    const lh = new Uint8Array(30 + name.length), dv = new DataView(lh.buffer);
+    dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true); dv.setUint16(6, 0x0800, true);
+    dv.setUint32(14, crc, true); dv.setUint32(18, data.length, true); dv.setUint32(22, data.length, true);
+    dv.setUint16(26, name.length, true);
+    lh.set(name, 30);
+    parts.push(lh, data);
+    const ch = new Uint8Array(46 + name.length), cv = new DataView(ch.buffer);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0x0800, true);
+    cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true);
+    cv.setUint16(28, name.length, true); cv.setUint32(42, off, true);
+    ch.set(name, 46);
+    central.push(ch);
+    off += lh.length + data.length;
+  });
+  const cd = central.reduce((a,b)=>a+b.length, 0);
+  const eo = new Uint8Array(22), ev = new DataView(eo.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cd, true); ev.setUint32(16, off, true);
+  return new Blob(parts.concat(central, [eo]),
+    {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
+function sheetXml(rows){
+  const last = rows[0].length;
+  const body = rows.map((r,ri)=>{
+    const cs = r.map((v,ci)=>{
+      if(v === "" || v === null || v === undefined) return "";
+      const ref = colName(ci+1) + (ri+1);
+      if(typeof v === "number" && isFinite(v)) return `<c r="${ref}"><v>${v}</v></c>`;
+      return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;
+    }).join("");
+    return `<row r="${ri+1}">${cs}</row>`;
+  }).join("");
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
+    + `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`
+    + `<cols><col min="1" max="1" width="12"/><col min="${last}" max="${last}" width="1" hidden="1"/></cols>`
+    + `<sheetData>${body}</sheetData></worksheet>`;
+}
+function xlsxBlob(rows){
+  const NS = "http://schemas.openxmlformats.org/";
+  return zipStore([
+    {name:"[Content_Types].xml", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="${NS}package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
+    {name:"_rels/.rels", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${NS}package/2006/relationships"><Relationship Id="rId1" Type="${NS}officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+    {name:"xl/workbook.xml", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="${NS}spreadsheetml/2006/main" xmlns:r="${NS}officeDocument/2006/relationships"><sheets><sheet name="記録" sheetId="1" r:id="rId1"/></sheets></workbook>`},
+    {name:"xl/_rels/workbook.xml.rels", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${NS}package/2006/relationships"><Relationship Id="rId1" Type="${NS}officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${NS}officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+    {name:"xl/styles.xml", data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="${NS}spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="1"><xf xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`},
+    {name:"xl/worksheets/sheet1.xml", data:sheetXml(rows)}
+  ]);
+}
+/* 1行1日の表を組み立てる。最後の「データ」列に、その日の入力をそのまま入れる */
+function logRows(log){
+  const head = ["日付","調合粉Lot","Lot変更","変更後のLot","Lot変更行"];
+  MACHINES.forEach(n=> head.push(n+"水",n+"水内訳",n+"昼稼働",n+"午前",n+"午後",n+"合計",n+"止め時刻",n+"現Lot使用量"));
+  head.push("捏ね回数計","KID液","D液","MP","水");
+  for(let i=1;i<=ROWS;i++) head.push("粉No."+i,"粉使用量"+i);
+  head.push("調合粉残","現Lot使用量合計","帳面残量","差","KID前日残","KID調合","KID調整","KID当日残",
+            "D前日残","D調合","D調整","D当日残","備考","データ");
+  const rows = log.map(r=>{
+    const s = r.input, c = r.calc || calc(r.input);
+    const lr = s.lotRow ?? -1;
+    const o = [s.date, s.lot, s.lotChange?"あり":"",
+               s.lotChange ? (s.lotNew || nextLot(s.lot)) : "",
+               s.lotChange && lr >= 0 ? lr+1 : ""];
+    s.machines.forEach((m,i)=> o.push(m.split?"":num(m.mizu), machDetail(m), m.hiru, m.am, m.pm, c.per[i], m.stop, m.oldUse ?? ""));
+    o.push(c.total, c.kid, c.dEki, c.mp, c.mizu);
+    for(let i=0;i<ROWS;i++) o.push(pad3(s.no[i]), c.use[i]);
+    o.push(c.zan===null?"":c.zan, num(c.oldSum), num(c.book ?? s.book), num(c.diff),
+           num(s.kidZen), num(s.kidCho), num(s.kidAdj), c.kidTou,
+           num(s.dZen), num(s.dCho), num(s.dAdj), c.dTou, s.memo, JSON.stringify(s));
+    return o;
+  });
+  return [head].concat(rows);
+}
+function toXlsx(){
+  const log = getLog().filter(r => yearFilter==="all" || yearOf(r.input.date)===yearFilter);
+  if(!log.length){ tell("書き出す記録がありません。"); return; }
+  downloadBlob("捏場生産記録_"+(yearFilter==="all" ? ymd(new Date()) : yearFilter+"年")+".xlsx",
+               xlsxBlob(logRows(log)));
+}
+
+/* ---- 読み込み ---- */
+function unzip(buf){
+  const u8 = new Uint8Array(buf), dv = new DataView(buf), dec = new TextDecoder();
+  let eo = -1;
+  for(let i=u8.length-22; i>=0 && i>=u8.length-70000; i--) if(dv.getUint32(i,true) === 0x06054b50){ eo = i; break; }
+  if(eo < 0) throw new Error("zipではありません");
+  const n = dv.getUint16(eo+10, true);
+  let p = dv.getUint32(eo+16, true);
+  const out = {};
+  for(let k=0;k<n;k++){
+    if(dv.getUint32(p,true) !== 0x02014b50) break;
+    const method = dv.getUint16(p+10, true), csize = dv.getUint32(p+20, true);
+    const nlen = dv.getUint16(p+28,true), elen = dv.getUint16(p+30,true), clen = dv.getUint16(p+32,true);
+    const lho = dv.getUint32(p+42, true);
+    const name = dec.decode(u8.subarray(p+46, p+46+nlen));
+    const start = lho + 30 + dv.getUint16(lho+26,true) + dv.getUint16(lho+28,true);
+    out[name] = {method, data: u8.subarray(start, start+csize)};
+    p += 46 + nlen + elen + clen;
+  }
+  return out;
+}
+async function inflateRaw(u8){
+  const ds = new DecompressionStream("deflate-raw");
+  const w = ds.writable.getWriter();
+  w.write(u8); w.close();
+  const rd = ds.readable.getReader();
+  const chunks = []; let len = 0, r;
+  while(!(r = await rd.read()).done){ chunks.push(r.value); len += r.value.length; }
+  const out = new Uint8Array(len);
+  let o = 0;
+  chunks.forEach(c=>{ out.set(c, o); o += c.length; });
+  return out;
+}
+/* シートと共有文字列から <t> の中身を集め、その日の入力データを取り出す */
+async function readXlsx(file){
+  const files = unzip(await file.arrayBuffer());
+  const dec = new TextDecoder();
+  let xml = "";
+  for(const name of Object.keys(files)){
+    if(!/^xl\/(worksheets\/sheet\d+\.xml|sharedStrings\.xml)$/.test(name)) continue;
+    const f = files[name];
+    xml += dec.decode(f.method === 0 ? f.data : await inflateRaw(f.data));
+  }
+  const out = [], re = /<t[^>]*>([\s\S]*?)<\/t>/g;
+  let m;
+  while((m = re.exec(xml))){
+    const s = xunesc(m[1]);
+    if(s.charAt(0) !== "{") continue;
+    try{ const o = JSON.parse(s); if(o && o.date && o.machines) out.push(o); }catch(err){}
+  }
+  return out;
+}
+async function fromXlsx(file){
+  if(editIdx !== null){ await tell("記録を編集中です。〔上書き保存〕か〔取消〕を押してください。"); return; }
+  let inputs = [];
+  try{ inputs = await readXlsx(file); }catch(err){ inputs = []; }
+  if(!inputs.length){
+    tell("このファイルからは記録を読み取れませんでした。\nこのアプリで書き出したExcelを選んでください。");
+    return;
+  }
+  const log = getLog();
+  const have = new Set(log.map(r=>r.input.date));
+  const upd = inputs.filter(i=> have.has(i.date)).length;
+  const add = inputs.length - upd;
+  if(!(await ask("Excelから "+inputs.length+" 件を読み込みます。\n増える "+add+" 件、同じ日付を書き換える "+upd+" 件です。", "読み込む"))) return;
+  const map = new Map(log.map(r=>[r.input.date, r]));
+  inputs.forEach(inp=>{
+    const r = map.get(inp.date);
+    if(r) r.input = inp; else map.set(inp.date, {input:inp, calc:null});
+  });
+  const merged = [...map.values()].sort((a,b)=> String(a.input.date).localeCompare(String(b.input.date)));
+  merged.forEach(r=> r.calc = calc(r.input));
+  setLog(merged);
+  renderLog();
+  tell("読み込みました。");
+}
+
+/* ================= events ================= */
+document.addEventListener("input", e=>{
+  const id = e.target.id || "";
+  const m = id.match(/^p_no(\d+)$/);
+  if(m){
+    fillNos(Number(m[1]));                        // 打った行から下を連番に
+    if(ckRow() > Number(m[1])) applyLotRow();     // Lot変更の行はNo.001のまま
+  }
+  if(id === "p_use0") use0Man = e.target.value !== "";   // 空にすると連動に戻る
+  if(id === "f_lot"){
+    if($("#f_lotChange").checked) syncLotMemo();
+  }
+  if(e.target.closest("#viewIn")) refresh();
+});
+document.addEventListener("change", e=>{
+  const p = e.target.closest(".pick");
+  if(p){                                   // 選んだ値を入力欄へ入れて、選択欄は空に戻す
+    if(p.value !== "") $("#"+p.dataset.for).value = p.value;
+    p.value = "";
+  }
+  const id = e.target.id || "";
+  if(id === "f_lotChange"){ onLotChange(); return; }
+  if(id === "f_kidAdjOn" || id === "f_dAdjOn") syncVis();
+  if(id === "f_kidCho") syncCho("f_kidCho", "KID液調合");
+  if(id === "f_dCho")   syncCho("f_dCho",   "D液調合");
+  if(e.target.closest("#viewIn")) refresh();
+});
+
+document.addEventListener("click", e=>{
+  const add = e.target.closest(".addseg");
+  if(add){ onAddSeg(Number(add.id.slice(5))); return; }
+  const rst = e.target.closest(".rst");
+  if(rst){ onReset(Number(rst.dataset.rst)); return; }
+  const del = e.target.closest(".xbtn");
+  if(del){ const [i,k] = del.dataset.del.split("_").map(Number); onDelSeg(i,k); }
+});
+
+$("#btnSave").addEventListener("click", save);
+$("#btnEditSave").addEventListener("click", saveEdit);
+$("#btnEditCancel").addEventListener("click", cancelEdit);
+$("#btnXlsx").addEventListener("click", toXlsx);
+$("#btnXlsxIn").addEventListener("click", ()=> $("#xlsxIn").click());
+$("#xlsxIn").addEventListener("change", e=>{
+  const f = e.target.files[0]; e.target.value = "";
+  if(f) fromXlsx(f);
+});
+$("#list").addEventListener("click", async e=>{
+  const eb = e.target.closest("[data-edit]");
+  if(eb){ startEdit(Number(eb.dataset.edit)); return; }
+  const yd = e.target.closest("[data-ydel]");
+  if(yd){ await delYear(yd.dataset.ydel); return; }
+  const d1 = e.target.closest("[data-del1]");
+  if(d1){ await delOne(Number(d1.dataset.del1)); return; }
+  const bar = e.target.closest(".mbar"); if(!bar) return;
+  const key = bar.dataset.m;
+  const open = !openMonths.has(key);
+  if(open) openMonths.add(key); else openMonths.delete(key);
+  bar.classList.toggle("open", open);
+  bar.setAttribute("aria-expanded", open);
+  bar.nextElementSibling.classList.toggle("hidden", !open);
+});
+$("#years").addEventListener("click", e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  yearFilter = b.dataset.y;
+  renderLog();
+  window.scrollTo(0,0);
+});
+$("#btnBackup").addEventListener("click", ()=>{
+  download("捏場生産記録_backup_"+ymd(new Date())+".json",
+    JSON.stringify({records:getLog(), current:readForm()}, null, 1), "application/json");
+});
+$("#btnRestore").addEventListener("click", ()=> $("#fileIn").click());
+$("#fileIn").addEventListener("change", e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = async () => {
+    let d = null;
+    try{
+      d = JSON.parse(rd.result);
+      if(!Array.isArray(d.records)) d = null;
+    }catch(err){ d = null; }
+    if(!d){ tell("このファイルは読み込めません。バックアップで書き出したJSONを選んでください。"); return; }
+    if(!(await ask("記録 "+d.records.length+" 件で置き換えます。今のデータは消えます。","置き換える"))) return;
+    setLog(d.records);
+    if(d.current) writeForm(d.current);
+    refresh(); renderLog();
+    tell("復元しました。");
+  };
+  rd.readAsText(f);
+  e.target.value = "";
+});
+$("#btnUndo").addEventListener("click", async ()=>{
+  const log = getLog();
+  if(!log.length){ tell("記録がありません。"); return; }
+  const last = log[log.length-1];
+  if(!(await ask(labelY(last.input.date)+" 分の記録を削除します。\n入力欄は元に戻りません。","削除する"))) return;
+  log.pop(); setLog(log); renderLog();
+});
+
+/* ---- 記録を消す ---- */
+/* 消したあとは、そこから後ろの前日残・調合粉残・No.・Lotを計算し直す */
+function afterDelete(log, from){
+  recarry(log, Math.max(0, from - 1));
+  setLog(log);
+  renderLog();
+}
+async function delOne(i){
+  if(editIdx !== null){ await tell("記録を編集中です。〔上書き保存〕か〔取消〕を押してください。"); return; }
+  const log = getLog();
+  const r = log[i];
+  if(!r) return;
+  if(!(await ask(labelY(r.input.date) + " 分の記録を消します。\nこの日より後ろの記録は、前日残・調合粉残・No.・Lotを計算し直します。", "消す"))) return;
+  log.splice(i, 1);
+  afterDelete(log, i);
+}
+async function delYear(y){
+  if(editIdx !== null){ await tell("記録を編集中です。〔上書き保存〕か〔取消〕を押してください。"); return; }
+  const log = getLog();
+  const n = log.filter(r=> yearOf(r.input.date) === y).length;
+  if(!n) return;
+  if(!(await ask(y + "年の記録 " + n + " 件を消します。\n元に戻せません。先にExcelかバックアップを取ってください。", "消す"))) return;
+  const first = log.findIndex(r=> yearOf(r.input.date) === y);
+  const rest  = log.filter(r=> yearOf(r.input.date) !== y);
+  afterDelete(rest, first);
+}
+
+function tab(which){
+  const isIn = which === "in";
+  $("#tabIn").setAttribute("aria-selected", isIn);
+  $("#tabLog").setAttribute("aria-selected", !isIn);
+  $("#viewIn").classList.toggle("hidden", !isIn);
+  $("#viewLog").classList.toggle("hidden", isIn);
+  $("#savebar").classList.toggle("hidden", !isIn);
+  if(!isIn) renderLog();
+  window.scrollTo(0,0);
+}
+$("#tabIn").addEventListener("click", ()=>tab("in"));
+$("#tabLog").addEventListener("click", ()=>tab("log"));
+
+/* ================= start ================= */
+(function init(){
+  if(!store.ok){
+    $("#warn").className = "sheet";
+    $("#warn").innerHTML = '<div class="note">この画面ではデータを保存できません（ブラウザの保存領域が使えない状態です）。ファイルをブラウザで直接開くか、GitHub Pages などに置いて使ってください。</div>';
+  }
+  let cur = null;
+  try{ cur = JSON.parse(store.get(K_CUR) || "null"); }catch(e){}
+  if(cur) writeForm(cur);
+  // 編集の途中でアプリを閉じていたら、編集は取消扱いにして元の入力に戻す
+  let stash = null;
+  try{ stash = JSON.parse(store.get(K_EDT) || "null"); }catch(e){}
+  if(stash){ writeForm(stash); store.set(K_EDT, ""); }
+  else MACHINES.forEach((_,i)=>{ $("#g_mizu"+i+"_0").value = 94; });
+  if(!$("#f_date").value) $("#f_date").value = ymd(new Date());
+  setLog(getLog());
+  syncVis();
+  refresh();
+  renderLog();
+})();
+</script>
+</body>
+</html>
